@@ -1,0 +1,114 @@
+units           real
+boundary        p p p
+timestep        10
+
+atom_style      angle
+bond_style      harmonic
+angle_style     hybrid harmonic table linear 360
+pair_style      lj96/cut 15
+pair_modify     shift yes mix arithmetic
+
+read_data       7CB-FCC.data
+
+neighbor        2.0 multi
+comm_modify     mode multi cutoff/multi 1 60 cutoff/multi 2*9 20 
+
+pair_coeff      1 * 1 5.2414 6.0
+pair_coeff      2 2 0.430224 4.3
+pair_coeff      3 3 0.764820 4.7
+pair_coeff      4 4 0.597522 4.6
+pair_coeff      5 5 0.346857 3.72
+pair_coeff      6 6 1.43405 5.45
+pair_coeff      7 7 0.76482 3.6
+pair_coeff      8 8 0.346857 3.72
+pair_coeff      9 9 1.434052 5.45
+
+
+angle_coeff     1  harmonic    0.000000     0.0
+angle_coeff     2  harmonic    5.975143   143.0
+angle_coeff     3  harmonic   45.411090   180.0
+angle_coeff     4  harmonic   45.411090   100.0
+angle_coeff     5  harmonic    2.031549   180.0
+angle_coeff     6  harmonic   45.411090   180.0
+angle_coeff     7  table P3-Om-C2.angleCoeff P3-Om-C2
+angle_coeff     8  harmonic    0.000000     0.0
+angle_coeff     9  harmonic    1.840344   180.0
+angle_coeff     10 harmonic   11.352772   163.0
+angle_coeff     11 harmonic    4.182600   143.0
+angle_coeff     12 harmonic   43.021033   180.0
+angle_coeff     13 harmonic   45.411090   160.0
+angle_coeff     14 harmonic    3.585086   152.0
+angle_coeff     15 harmonic    4.397706   157.5
+angle_coeff     16 harmonic   45.411090   180.0
+angle_coeff     17 table P3-Op-C2.angleCoeff P3-Op-C2
+angle_coeff     18 harmonic    0.000000   180.0
+angle_coeff     19 table O-C2-C2.angleCoeff O-C2-C2
+angle_coeff     20 table O-C2-C2.angleCoeff O-C2-C2
+angle_coeff     21 harmonic    3.585086   146.0
+angle_coeff     22 harmonic   45.411090    80.0
+angle_coeff     23 harmonic   45.411090   180.0
+
+group           centr type 1
+group           solvent molecule > 12000
+group           metal1 molecule 1 
+group           metal2 molecule 2000 
+group           metal3 molecule 4000 
+group           metal4 molecule 6000
+
+group           rigid type 4 5 6 7 8 9
+group           prerd type 4 5 8 6 9 
+group           sideoxy type 8
+group           sideoxy include molecule
+group           triox intersect prerd sideoxy
+
+group           lcbiphe type 9
+group           lcbiphe include molecule
+group           lcyst intersect lcbiphe prerd
+
+group           lgbiphe type 6
+group           lgbiphe include molecule
+group           biphe intersect lgbiphe prerd
+
+group           bprgd intersect biphe rigid
+group           trrgd intersect triox rigid
+group           lcrgd intersect lcyst rigid
+group           other subtract all trrgd metal1 metal2 metal3 metal4 
+group           union union trrgd metal1 metal2 metal3 metal4 
+group           sol type 9
+
+delete_bonds    union multi
+#delete_atoms    random fraction 0.15 no sol NULL 87227 bond yes mol yes
+
+compute         pressure all pressure thermo_temp
+fix             rigid union rigid/nve/small molecule
+fix             com1 metal1 spring tether 1000  0.0 0.0 0.0 0
+
+thermo          1000
+thermo_style    custom step cpuremain temp pe etotal zlo xlo ylo press
+
+timestep        5.0
+fix             deform all deform 1 z vel 1e-7 x volume y volume 
+restart         5000 solRunZD4-A.restart solRunZD4-B.restart
+fix             tempControl1 other nvt temp 300.0 300.0 100 dilate all
+write_data      Deform-17nm.data
+
+dump            dumpCalc0 all atom 10000 tran_deform-sample-A.lammpstrj
+run             20000000 
+undump          dumpCalc0
+write_data      Deform-18nm.data
+
+dump            dumpCalc1 all atom 10000 tran_deform-sample-B.lammpstrj
+run             20000000 
+undump          dumpCalc1
+write_data      Deform-19nm.data
+
+dump            dumpCalc2 all atom 10000 tran_deform-sample-C.lammpstrj
+run             20000000 
+undump          dumpCalc2
+write_data      Deform-20nm.data
+
+
+
+
+
+
